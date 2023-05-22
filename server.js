@@ -7,10 +7,20 @@ app.use(express.static('public'));
 //global variables with envelopes 
 var myEnvelopes = [];
 
+//TODO
+//create a function to find the index of an envelope and return it, also ensuring it exists
+//create a function that checks if the amount is a number and replace the isNaN functions already there
+//moves functions to a different file
+
 //function to add a new string to the end of the history string
 function addHistory(envelopeIndex, newHistory) {
     myEnvelopes[envelopeIndex].history += ` 
     ${newHistory}`; 
+}
+
+function getEnvelopeIndex(envelopeName) {
+    const envelopeIndex = myEnvelopes.findIndex( (item) => item.name === envelopeName );
+    return envelopeIndex;
 }
 
 //gets all of the envelope data
@@ -27,7 +37,7 @@ app.get('/getEnvelopes', (req, res) => {
         envelopeData += `
         ${myEnvelopes[i].name} has $${myEnvelopes[i].amount}.
         Previous Transactions:
-        ${myEnvelopes[i].history}.`;
+        ${myEnvelopes[i].history}`;
         envelopeData += `
         `;
     } 
@@ -38,14 +48,14 @@ app.get('/getEnvelopes', (req, res) => {
 //returns the data in a single envelope
 app.get('/getEnvelope', (req, res) => {
     const envelope = req.query.envelope;
-    const envelopeIndex = myEnvelopes.findIndex( (item) => item.name === envelope );
+    const envelopeIndex = getEnvelopeIndex( envelope );
     const envelopeAmount = myEnvelopes[envelopeIndex].amount;
     const envelopeHistory = myEnvelopes[envelopeIndex].history;
     
     //if envelope does not exist, return error
     if( envelopeIndex === -1 ) {
-        console.log('Envelope does not exist.');
-        res.status(400).send('Envelope does not exist.');
+        console.log(`Envelope ${envelope} does not exist.`);
+        res.status(400).send(`Envelope ${envelope} does not exist.`);
         return;
     }
 
@@ -53,7 +63,7 @@ app.get('/getEnvelope', (req, res) => {
     res.status(200).send(`Envelope ${envelope} has $${envelopeAmount}. 
 
     Previous Transactions: 
-     ${envelopeHistory}.`);
+     ${envelopeHistory}`);
 });
 
 //create a post to add new entries to my myEnvelopes array
@@ -105,7 +115,7 @@ app.put('/updateEnvelope', (req, res) => {
     }
 
     //get envelope index
-    const envelopeIndex = myEnvelopes.findIndex( (item) => item.name === envelopeName );
+    const envelopeIndex = getEnvelopeIndex( envelopeName );
 
     //if envelope does not exist, return error
     if ( envelopeIndex === -1) {
@@ -139,7 +149,7 @@ app.put('/updateEnvelope', (req, res) => {
         console.log(history);
         addHistory(envelopeIndex, history);
     } else {
-        history = `$${changeAmount} was removed from ${envelopeName}.`;
+        history = `$${changeAmount} was removed from ${envelopeName}. Envelope ${envelopeName} now has $${newAmount}.`;
         console.log(history);
         addHistory(envelopeIndex, history);
     }
@@ -161,7 +171,7 @@ app.put('/transferEnvelope', (req, res) => {
     }
 
     //get fromEnvelope index
-    const fromEnvelopeIndex = myEnvelopes.findIndex( (item) => item.name === fromEnvelope );
+    const fromEnvelopeIndex = getEnvelopeIndex( fromEnvelope );
 
     //if fromEnvelope does not exist, return error
     if ( fromEnvelopeIndex === -1) {
@@ -171,7 +181,7 @@ app.put('/transferEnvelope', (req, res) => {
     }
 
     //get fromEnvelope index
-    const toEnvelopeIndex = myEnvelopes.findIndex( (item) => item.name === toEnvelope );
+    const toEnvelopeIndex = getEnvelopeIndex( toEnvelope );
 
     //if fromEnvelope does not exist, return error
     if ( toEnvelopeIndex === -1) {
@@ -194,9 +204,9 @@ app.put('/transferEnvelope', (req, res) => {
 
     //history of the envelope
     let history = '';
-    history = `$${transferAmount} was transfered from ${fromEnvelope} to ${toEnvelope}.`;
-    console.log(history);
+    history = `$${transferAmount} was transfered from ${fromEnvelope} to ${toEnvelope}. Envelope ${fromEnvelope} now has $${myEnvelopes[fromEnvelopeIndex].amount}.`;
     addHistory(fromEnvelopeIndex, history);
+    history = `$${transferAmount} was transfered from ${fromEnvelope} to ${toEnvelope}. Envelope ${toEnvelope} now has $${myEnvelopes[toEnvelopeIndex].amount}.`;
     addHistory(toEnvelopeIndex, history);
 
     //return data
@@ -206,7 +216,7 @@ app.put('/transferEnvelope', (req, res) => {
 
 app.delete('/deleteEnvelope', (req, res) => {
     const envelopeName = req.query.envelope;
-    const envelopeIndex = myEnvelopes.findIndex( (item) => item.name === envelopeName );
+    const envelopeIndex = getEnvelopeIndex( envelopeName );
 
     //if envelope does not exist, return error
     if( envelopeIndex === -1 ) {
